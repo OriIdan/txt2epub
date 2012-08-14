@@ -1,0 +1,270 @@
+#!/usr/bin/perl
+use warnings;
+use strict;
+our($builder, $progdir, $basedir);
+
+use utf8;   # Needed for Hebrew
+use Encode;
+use POSIX qw/strftime/;
+use File::Spec::Functions qw(rel2abs);
+use File::Basename;
+use File::Copy;
+use Cwd;
+use Glib;
+use Gtk2 '-init';
+
+$progdir = dirname(rel2abs($0));
+
+my $guifile = "$progdir/txt2epub.gui";
+
+$basedir = $progdir;
+
+print "GUI file: $guifile\n";
+$builder = Gtk2::Builder->new();
+$builder->add_from_file($guifile) or die "Couldn't read $guifile";
+$builder->connect_signals( undef );
+my $cwd = getcwd();
+if($progdir ne $cwd) {
+	my $ctrl = $builder->get_object("directory");
+	$ctrl->set_filename($basedir);
+}
+
+my $window = $builder->get_object("window1") or die "Can't open main window";
+
+$window->show_all();
+
+Gtk2->main();
+
+# Callbacks
+sub cb_window1_destroy {
+	Gtk2->main_quit();
+}
+
+sub cb_dirchange() {
+	my $ctrl = $builder->get_object("directory");
+	my $dirname = $ctrl->get_filename();
+	my ($ctrlval, $buffer, $fname, $title, $subtitle, $iter);
+
+	open(FILE, "$dirname/content.txt") or return;
+	while(<FILE>) {
+		chomp;
+		if(/^.F,(.*)/) {
+			$ctrl = $builder->get_object("epubname");
+			$ctrl->set_text($1);
+		}
+		elsif(/^.M\[(.*)\](.*)/) {
+			my $ctrlname = $1;
+			$ctrlval = $2;
+			$ctrl = $builder->get_object($ctrlname);
+			if($ctrlname ne "description") {
+				$ctrl->set_text(decode("utf8", $ctrlval));
+			}
+			else {
+				$ctrlval =~ s/\\n/\n/g;
+				$buffer = $ctrl->get_buffer();
+				$buffer->set_text(decode("utf8", $ctrlval));
+			}
+		}
+		elsif(/^.C\[(.*)\](.*)/) {
+			if($1 eq "image") {
+				$ctrl = $builder->get_object("coverimage");
+				$ctrl->set_filename($2);
+			}
+			elsif($1 eq "license") {
+				$ctrl = $builder->get_object("licensetext");
+				$ctrlval = $2;
+				$ctrlval =~ s/\\n/\n/g;
+				$buffer = $ctrl->get_buffer();
+				$buffer->set_text(decode("utf8", $ctrlval));
+			}
+			elsif($1 eq "licenselogo") {
+				$ctrl = $builder->get_object("licenselogo");
+				$ctrl->set_filename($2);
+			}
+		}
+		else {
+			($fname, $title, $subtitle) = split(/,/, $_);
+			if($fname eq '') {
+				next;
+			}
+			$ctrl = $builder->get_object("liststore1");
+			$iter = $ctrl->append();
+			$ctrl->set($iter, 0 => $fname, 1 => decode("utf8", $title), 2 => decode("utf8", $subtitle));
+		}
+	}	
+	close(FILE);
+}
+
+sub cb_create() {
+	print "Create call back\n";
+	my $ctrl = $builder->get_object("directory");
+	my $dirname = $ctrl->get_filename();
+	
+	open(FILE, ">$dirname/content.txt");
+	binmode FILE, ":utf8";
+
+	$ctrl = $builder->get_object("epubname");
+	my $txt = $ctrl->get_text();
+	print FILE ".F,$txt\n";	
+
+	$ctrl = $builder->get_object("identifier");
+	$txt = $ctrl->get_text();
+	print FILE ".M[identifier]$txt\n";
+	
+	$ctrl = $builder->get_object("title");
+	$txt = $ctrl->get_text();
+	print FILE ".M[title]$txt\n";
+	
+	$ctrl = $builder->get_object("language");
+	$txt = $ctrl->get_text();
+	print FILE ".M[language]$txt\n";
+	
+	$ctrl = $builder->get_object("creator");
+	$txt = $ctrl->get_text();
+	print FILE ".M[creator]$txt\n";
+	
+	$ctrl = $builder->get_object("publisher");
+	$txt = $ctrl->get_text();
+	print FILE ".M[publisher]$txt\n";
+	
+	$ctrl = $builder->get_object("rights");
+	$txt = $ctrl->get_text();
+	print FILE ".M[rights]$txt\n";
+	
+	$ctrl = $builder->get_object("subject");
+	$txt = $ctrl->get_text();
+	print FILE ".M[subject]$txt\n";
+	
+	$ctrl = $builder->get_object("description");
+	my $buffer = $ctrl->get_buffer();
+	$txt = $buffer->get_text($buffer->get_start_iter(), $buffer->get_end_iter(), 0);
+	$txt =~ s/\n/\\n/g;
+	print FILE ".M[description]$txt\n";
+
+# Cover page
+	$ctrl = $builder->get_object("coverimage");
+	$txt = $ctrl->get_filename();
+	print FILE ".C[image]$txt\n";
+
+	$ctrl = $builder->get_object("licensetext");
+	$buffer = $ctrl->get_buffer();
+	$txt = $buffer->get_text($buffer->get_start_iter(), $buffer->get_end_iter(), 0);
+	$txt =~ s/\n/\\n/g;
+	print FILE ".C[license]$txt\n";
+
+	$ctrl = $builder->get_object("licenselogo");
+	$txt = $ctrl->get_filename();
+	print FILE ".C[licenselogo]$txt\n";
+	
+# Store files list
+	$ctrl = $builder->get_object("liststore1");
+	my $path = 0;
+	my $iter = $ctrl->get_iter_from_string($path);
+	my $fname = "";
+	my $title = "";
+	my $subtitle = "";
+	# I could not find a way to get the number of lines and a way to get the iter point to next line.
+	# So I am incrementing the number of line ($path) and geeting an iter to that number.
+	# If I get an undefined iter it will fail the while test and end the loop.
+	while($iter) {
+		$fname = $ctrl->get($iter, 0);
+		$title = $ctrl->get($iter, 1);
+		$subtitle = $ctrl->get($iter, 2);
+		print FILE "$fname,$title,$subtitle\n";
+		$path++;
+		$iter = $ctrl->get_iter_from_string($path);
+	}
+	close(FILE);
+
+	chdir $dirname;
+	require("$progdir/genepub.pl");
+
+	my $dialog = Gtk2::MessageDialog->new($builder->get_object("window1"), 'destroy-with-parent', 'info', 'ok', "EPUB file created");
+	my $response = $dialog->run;
+	$dialog->destroy;
+}
+
+sub cb_addfile {
+	my $window = $builder->get_object("window2") or die "Can't open window 2";
+
+	$window->set_modal(1);
+	$window->show_all();
+}
+
+sub cb_window2_cancel {
+	my $window = $builder->get_object("window2") or die "Can't open window 2";
+	
+	$window->hide_all();
+	return 0;
+}
+
+sub cb_window2_apply {
+	my $ctrl = $builder->get_object("addfile");
+	my $filename = $ctrl->get_filename();
+	
+	$ctrl = $builder->get_object("addtitle");
+	my $title = $ctrl->get_text();
+	
+	$ctrl = $builder->get_object("addsubtitle");
+	my $subtitle = $ctrl->get_text();
+	
+	$ctrl = $builder->get_object("liststore1");
+	my $iter = $ctrl->append();
+	$ctrl->set($iter, 0 => $filename, 1 => $title, 2 => $subtitle);
+	
+	my $window = $builder->get_object("window2");
+	$window->hide_all();
+}
+
+sub cb_subtitleedit {
+
+	my $ctrl = $builder->get_object("liststore1");
+	my $iter = $ctrl->get_iter_from_string($_[1]);
+	$ctrl->set($iter, 2 => $_[2]);
+}
+
+sub cb_titleedited {
+	my $ctrl = $builder->get_object("liststore1");
+	my $iter = $ctrl->get_iter_from_string($_[1]);
+	$ctrl->set($iter, 1 => $_[2]);
+}
+
+sub cb_remove {
+	my $ctrl = $builder->get_object("treeview1");
+	(my $path, my $c) = $ctrl->get_cursor();
+
+	$ctrl = $builder->get_object("liststore1");
+	my $iter = $ctrl->get_iter($path);
+	$ctrl->remove($iter);
+}
+
+sub cb_up {
+	my $ctrl = $builder->get_object("treeview1");
+	(my $path, my $c) = $ctrl->get_cursor();
+
+	$ctrl = $builder->get_object("liststore1");
+	my $iter = $ctrl->get_iter($path);
+	$path = $ctrl->get_string_from_iter($iter);
+	if($path > 0) {
+		$path--;
+		my $iter1 = $ctrl->get_iter_from_string($path);
+		$ctrl->swap($iter, $iter1);
+	}	
+}
+
+sub cb_down {
+	my $ctrl = $builder->get_object("treeview1");
+	(my $path, my $c) = $ctrl->get_cursor();
+
+	$ctrl = $builder->get_object("liststore1");
+	my $iter = $ctrl->get_iter($path);
+	$path = $ctrl->get_string_from_iter($iter);
+	$path++;
+	my $iter1 = $ctrl->get_iter_from_string($path);
+	$ctrl->swap($iter, $iter1);
+}
+
+sub cb_window2_close {
+	return 1;
+}
+	
