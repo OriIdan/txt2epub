@@ -1,7 +1,9 @@
 #!/usr/bin/perl
+$pkgdir = "/usr/local/share/txt2epub";
+
 use warnings;
 use strict;
-our($builder, $progdir, $basedir);
+our($builder, $progdir, $basedir, $pkgdir);
 
 use utf8;   # Needed for Hebrew
 use Encode;
@@ -15,36 +17,10 @@ use Gtk2 '-init';
 
 $progdir = dirname(rel2abs($0));
 
-my $guifile = "$progdir/txt2epub.gui";
-
-$basedir = $progdir;
-
-print "GUI file: $guifile\n";
-$builder = Gtk2::Builder->new();
-$builder->add_from_file($guifile) or die "Couldn't read $guifile";
-$builder->connect_signals( undef );
-my $cwd = getcwd();
-if($progdir ne $cwd) {
-	my $ctrl = $builder->get_object("directory");
-	$ctrl->set_filename($basedir);
-}
-
-my $window = $builder->get_object("window1") or die "Can't open main window";
-
-$window->show_all();
-
-Gtk2->main();
-
-# Callbacks
-sub cb_window1_destroy {
-	Gtk2->main_quit();
-}
-
-sub cb_dirchange() {
-	my $ctrl = $builder->get_object("directory");
-	my $dirname = $ctrl->get_filename();
-	my ($ctrlval, $buffer, $fname, $title, $subtitle, $iter);
-
+sub LoadContents {
+	my $dirname = shift;
+	my ($ctrl, $ctrlname, $ctrlval, $buffer, $fname, $title, $subtitle, $iter);
+	
 	open(FILE, "$dirname/content.txt") or return;
 	while(<FILE>) {
 		chomp;
@@ -94,9 +70,43 @@ sub cb_dirchange() {
 	}	
 	close(FILE);
 }
+	
+$basedir = $progdir;
+my $guifile = "$basedir/txt2epub.gui";
+unless(-e $guifile) {
+	$basedir = $pkgdir;
+	$guifile = "$basedir/txt2epub.gui";
+}
+# print "GUI file: $guifile\n";
+$builder = Gtk2::Builder->new();
+$builder->add_from_file($guifile) or die "Couldn't read $guifile";
+$builder->connect_signals( undef );
+my $cwd = getcwd();
+if($progdir ne $cwd) {
+	my $ctrl = $builder->get_object("directory");
+	$ctrl->set_filename($cwd);
+	LoadContents($cwd);
+}
+
+my $window = $builder->get_object("window1") or die "Can't open main window";
+
+$window->show_all();
+
+Gtk2->main();
+
+# Callbacks
+sub cb_window1_destroy {
+	Gtk2->main_quit();
+}
+
+sub cb_dirchange() {
+	my $ctrl = $builder->get_object("directory");
+	my $dirname = $ctrl->get_filename();
+
+	LoadContents($dirname);
+}
 
 sub cb_create() {
-	print "Create call back\n";
 	my $ctrl = $builder->get_object("directory");
 	my $dirname = $ctrl->get_filename();
 	
@@ -177,7 +187,7 @@ sub cb_create() {
 	close(FILE);
 
 	chdir $dirname;
-	require("$progdir/genepub.pl");
+	require("$basedir/genepub.pl");
 
 	my $dialog = Gtk2::MessageDialog->new($builder->get_object("window1"), 'destroy-with-parent', 'info', 'ok', "EPUB file created");
 	my $response = $dialog->run;

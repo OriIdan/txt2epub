@@ -182,16 +182,16 @@ sub CreateDirs {
 	my $epubname = $_[0];
 	print "Generating directory: $epubname\n";
 	mkdir $epubname;
-	print "Generating directory: $epubname/OEPBS\n";
+#	print "Generating directory: $epubname/OEPBS\n";
 	mkdir "$epubname/OEPBS";
 	mkdir "$epubname/OEPBS/Fonts";
 	
-	print "Generating file: mimetype\n";
+#	print "Generating file: mimetype\n";
 	open(MIME, ">$epubname/mimetype");
 	print MIME "application/epub+zip";
 	close(MIME);
 	
-	print "Generating directory META-INF\n";
+#	print "Generating directory META-INF\n";
 	mkdir "$epubname/META-INF";
 	open(CONTAINER, ">$epubname/META-INF/container.xml");
 	print CONTAINER "<?xml version=\"1.0\"?>\n";
@@ -222,7 +222,7 @@ sub CreateToc {
 	print TOC "</head>\n";
 	print TOC "<body>\n";
 	print TOC "<section class=\"toc\">\n";
-	print "lang: $lang\n";
+#	print "lang: $lang\n";
 	if($lang =~ /he/) {
 		$cword = "תוכן העניינים";
 	}
@@ -276,7 +276,7 @@ sub CreateToc {
 }
 
 my($epubname, %metadata, %cover, @files);
-print "Opening content.txt\n";
+#print "Opening content.txt\n";
 open(FILE, "content.txt");
 while(<FILE>) {
 	if(/^.F,(.*)/) {
@@ -333,7 +333,7 @@ print CONTENT "<item id=\"css\" href=\"default.css\" media-type=\"text/css\"/>\n
 @additionalfiles = GetCSSFiles("$basedir/default.css");
 foreach(@additionalfiles) {
 	($b, $d, $e) = fileparse($_, qr/\.[^.]*/);
-	print "Copy $_ to $epubname/OEPBS/$d$b$e\n";
+#	print "Copy $_ to $epubname/OEPBS/$d$b$e\n";
 	copy("$basedir/$_", "$epubname/OEPBS/$d/$b$e");
 	$mt = GetMediaType($e);
 	print CONTENT "<item id=\"$b\" href=\"$_\" media-type=\"$mt\" />\n";
