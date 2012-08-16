@@ -1,0 +1,25 @@
+txt2epub
+
+Version: 0.1
+
+This script is used to create EPUB3.0 files from a series of text files. 
+You specify the metadata and files using the GUI and then click create to create the EPUB file.
+
+The software work for both English and Hebrew text files. Hebrew text files must be in UTF-8 encoding.
+
+License: GPL Version 3.0
+Language: Perl with Perl::Gtk+
+
+This software allowes you to enter metadata for the file, and add a list of text files along with title and optional subtitle for each file.
+
+Current version uses a file named default.css copied to the EPUB file.
+The css file may contain reference to fonts in Fonts directory. The fonts will be also copied to the EPUB file
+
+The text files may contain references to images. just add images as html <img> tags.
+Images must be in the same directory as text file.
+Images must be 
+For example: <img src="image.jpg" alt="First image">
+
+The software will copy the images to the EPUB.
+
+

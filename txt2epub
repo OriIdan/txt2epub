@@ -1,4 +1,11 @@
 #!/usr/bin/perl
+# Script to create an EPUB file from series of text files.
+#
+# Written by Ori Idan <ori@helicontech.co.il>
+# This program is licensed under GPL version 3.0
+#
+$version = 0.1;
+
 $pkgdir = "/usr/local/share/txt2epub";
 
 use warnings;
