@@ -322,7 +322,10 @@ while(($metaname, $metacontent) = each(%metadata)) {
 	}
 }
 my $strtime = strftime('%Y-%m-%dT%H:%M:%SZ', localtime);
+my $strdate = strftime('%Y-%m-%d', localtime);
+print CONTENT "<dc:date>$strdate</dc:date>\n";
 print CONTENT "<meta property=\"dcterms:modified\">$strtime</meta>\n";
+print CONTENT "<meta name=\"cover\" content=\"cover-image\" />\n";
 
 print CONTENT "</metadata>\n";
 print CONTENT "<manifest>\n";
@@ -343,7 +346,7 @@ my($dirname, $base, $ext);
 if($f) {
 	($base, $dirname, $ext) = fileparse($f, qr/\.[^.]*/);
 	$mt = GetMediaType($ext);
-	print CONTENT "<item id=\"coverimg\" href=\"$base$ext\" media-type=\"$mt\" />\n";
+	print CONTENT "<item id=\"cover-image\" href=\"$base$ext\" media-type=\"$mt\" />\n";
 }
 $f = $cover{"licenselogo"};
 if($f) {
@@ -396,6 +399,9 @@ foreach (@spine) {
 	print CONTENT "<itemref idref=\"$_\" />\n";
 }
 print CONTENT "</spine>\n";
+print CONTENT "<guide>\n";
+print CONTENT "<reference href=\"cover.xhtml\" type=\"cover\" title=\"Cover\"/>\n";
+print CONTENT "</guide>\n";
 print CONTENT "</package>\n";
 close(CONTENT);
 
