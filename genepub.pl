@@ -316,6 +316,11 @@ while(($metaname, $metacontent) = each(%metadata)) {
 		print CONTENT "<dc:identifier id=\"bookid\">$metacontent</dc:identifier>\n";
 		print CONTENT "<meta property=\"dcterms:$metaname\">$metacontent</meta>\n";
 	}
+	elsif($metaname eq "description") {
+		$metacontent =~ s/\\n/\n/g;
+		print CONTENT "<dc:$metaname>$metacontent</dc:$metaname>\n";
+		print CONTENT "<meta property=\"dcterms:$metaname\">$metacontent</meta>\n";
+	}
 	else {
 		print CONTENT "<dc:$metaname>$metacontent</dc:$metaname>\n";
 		print CONTENT "<meta property=\"dcterms:$metaname\">$metacontent</meta>\n";
@@ -406,7 +411,8 @@ print CONTENT "</package>\n";
 close(CONTENT);
 
 chdir($epubname);
-system("zip -r -X $epubname.zip mimetype META-INF/ OEPBS/");
+system("zip -0Xq $epubname.zip mimetype");
+system("zip -Xr9Dq $epubname.zip META-INF/ OEPBS/");
 chdir("..");
 system("mv $epubname/$epubname.zip $epubname.epub");
 
