@@ -89,7 +89,7 @@ h5 { font-size: 100%;
 	font-family: 'Times New Roman', Times, serif, 'sans serif', 'DejaVu Sans';
 	text-align: center;
 	direction: rtl;
-	writing-mode: rl-tb;
+/*	writing-mode: rl-tb; */
 	font-weight: normal;
 }		
 
@@ -101,8 +101,8 @@ h5 { font-size: 100%;
 .regular {
 	font-family: 'Times New Roman', Times, serif, 'sans serif', 'DejaVu Sans';
 	font-size: 100%;
-	writing-mode: rl-tb;
-	direction:rtl;
+/*	writing-mode: rl-tb;
+	direction:rtl; */
 }
 
 .regularbold {

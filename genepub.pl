@@ -76,7 +76,12 @@ sub txt2xhtml {
 	print OUT "    <title>$title</title>\n";
 	print OUT "    <link href=\"default.css\" rel=\"stylesheet\" type=\"text/css\" />\n";
 	print OUT "</head>\n";
-	print OUT "<body>\n";
+	if($lang eq 'he') {
+		print OUT "<body style=\"direction:rtl;text-align:right\">\n";
+	}
+	else {
+		print OUT "<body>\n";
+	}
 
 	$inp = 0;
 	if($title ne '') {
@@ -88,19 +93,19 @@ sub txt2xhtml {
 	while(<FILE>) {
 		chomp($_);
 		if(($_ eq '') && ($inp == 1)) {
-			print OUT "</span></p>\n";
+			print OUT "</p>\n";
 			$inp = 0;
 		}
 		else {
 			if($inp == 0) {
-				print OUT "<p dir=\"rtl\"><span class=\"regular\">\n";
+				print OUT "<p class=\"regular\">\n";
 				$inp = 1;
 			}
 			print OUT "$_<br />\n";
 		}
 	}
 	if($inp) {
-		print OUT "</span></p>\n";
+		print OUT "</p>\n";
 	}
 	print OUT "</body>\n";
 	print OUT "</html>\n";
