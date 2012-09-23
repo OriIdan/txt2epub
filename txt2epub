@@ -194,6 +194,7 @@ sub cb_create() {
 	close(FILE);
 
 	chdir $dirname;
+	print "Loading $basedir/genepub.pl\n";
 	require("$basedir/genepub.pl");
 
 	my $dialog = Gtk2::MessageDialog->new($builder->get_object("window1"), 'destroy-with-parent', 'info', 'ok', "EPUB file created");

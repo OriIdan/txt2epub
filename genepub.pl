@@ -341,7 +341,12 @@ print CONTENT "</metadata>\n";
 print CONTENT "<manifest>\n";
 print CONTENT "<item id=\"ncx\" href=\"toc.ncx\" media-type=\"application/x-dtbncx+xml\"/>\n";
 print CONTENT "<item id=\"toc\" properties=\"nav\" href=\"toc.xhtml\" media-type=\"application/xhtml+xml\" />\n";
-copy("$basedir/default.css", "$epubname/OEPBS/default.css");
+if($metadata{"language"} eq "he") {
+	copy("$basedir/default.css", "$epubname/OEPBS/default.css");
+}
+else {
+	copy("$basedir/default_en.css", "$epubname/OEPBS/default.css");
+}
 print CONTENT "<item id=\"css\" href=\"default.css\" media-type=\"text/css\"/>\n";
 @additionalfiles = GetCSSFiles("$basedir/default.css");
 foreach(@additionalfiles) {
@@ -374,6 +379,11 @@ foreach(@files) {
 		print CONTENT "<item id=\"$base\" href=\"$base.xhtml\" media-type=\"application/xhtml+xml\"/>\n";
 		push(@spine, $base);
 	}
+	elsif($ext eq ".svg") {
+		copy($fname, "$epubname/OEPBS");
+		print CONTENT "<item id=\"$base\" href=\"$base$ext\" media-type=\"image/svg+xml\"/>\n";
+		push(@spine, $base);
+	}
 	elsif($ext eq ".txt") {
 		@additionalfiles = GetFiles($fname);
 		txt2xhtml($epubname, $fname, $title, $subtitle, $metadata{"language"});
@@ -388,12 +398,13 @@ foreach(@files) {
 	}
 	elsif($ext eq "jpg") {
 		copy($_, "$epubname/OEPBS/$_");
-		print CONTENT "<item id=\"$base\" href=\"$base.$ext\" media-type=\"image/jpeg\"/>\n";
+		print CONTENT "<item id=\"$base\" href=\"$base$ext\" media-type=\"image/jpeg\"/>\n";
 	}
 	elsif($ext eq "png") {
 		copy($_, "$epubname/OEPBS/$_");
-		print CONTENT "<item id=\"$base\" href=\"$base.$ext\" media-type=\"image/png\"/>\n";
+		print CONTENT "<item id=\"$base\" href=\"$base$ext\" media-type=\"image/png\"/>\n";
 	}
+	
 }
 print CONTENT "</manifest>\n";
 my $pd;
