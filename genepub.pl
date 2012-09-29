@@ -257,6 +257,7 @@ sub CreateToc {
 		($fname,$title,$subtitle) = split(/,/, $_);
 		($base, $dirname, $ext) = fileparse($fname, qr/\.[^.]*/);	
 
+		chomp($subtitle);
 		if($subtitle eq '') {
 			$subtitle = $title;
 		}
