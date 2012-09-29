@@ -256,7 +256,10 @@ sub CreateToc {
 	foreach(@files) {
 		($fname,$title,$subtitle) = split(/,/, $_);
 		($base, $dirname, $ext) = fileparse($fname, qr/\.[^.]*/);	
-
+		
+		if($ext eq '.txt') {
+			$ext = '.xhtml';
+		}
 		chomp($subtitle);
 		if($subtitle eq '') {
 			$subtitle = $title;
@@ -265,11 +268,11 @@ sub CreateToc {
 			$subtitle = $base;
 		}
 		
-		print TOC "<li id=\"$base\"><a href=\"$base.xhtml\">$subtitle</a></li>\n";
+		print TOC "<li id=\"$base\"><a href=\"$base$ext\">$subtitle</a></li>\n";
 
 		print NCX "<navPoint class=\"chapter\" id=\"$base\" playOrder=\"$ord\">\n";
 		print NCX "<navLabel>\n<text>$subtitle</text>\n</navLabel>\n";
-		print NCX "<content src=\"$base.xhtml\" />\n";
+		print NCX "<content src=\"$base$ext\" />\n";
 		print NCX "</navPoint>\n";
 		$ord++;
 	}
