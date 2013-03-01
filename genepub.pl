@@ -77,7 +77,7 @@ sub txt2xhtml {
 	print OUT "    <link href=\"default.css\" rel=\"stylesheet\" type=\"text/css\" />\n";
 	print OUT "</head>\n";
 	if($lang eq 'he') {
-		print OUT "<body style=\"direction:rtl;text-align:right\">\n";
+		print OUT "<body style=\"text-align:right\" dir=\"rtl\">\n";
 	}
 	else {
 		print OUT "<body>\n";
@@ -131,7 +131,7 @@ sub CreateCover {
 	print FILE "<div style=\"text-align:center;page-break-after:always;\">\n";
 	my ($base, $dirname) = fileparse($image);
 	copy($image, "$epubname/OEPBS/");
-	print FILE "<img src=\"$base\" style=\"height:100%;\" alt=\"Cover image\" />\n";
+	print FILE "<img src=\"$base\" style=\"height:90%;\" alt=\"Cover image\" />\n";
 	print FILE "</div>\n</body>\n</html>\n";
 	close(FILE);
 	if($lang eq "he") {
@@ -240,7 +240,7 @@ sub CreateToc {
 
 	open(NCX, ">$epubname/OEPBS/toc.ncx");
 	print NCX "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n";
-	print NCX "<!DOCTYPE ncx PUBLIC \"-//NISO//DTD ncx 2005-1//EN\" \"http://www.daisy.org/z3986/2005/ncx-2005-1.dtd\">\n";
+#	print NCX "<!DOCTYPE ncx PUBLIC \"-//NISO//DTD ncx 2005-1//EN\" \"http://www.daisy.org/z3986/2005/ncx-2005-1.dtd\">\n";
 	print NCX "<ncx xmlns=\"http://www.daisy.org/z3986/2005/ncx/\" version=\"2005-1\">\n";
 	print NCX "<head>\n";
 	print NCX "<meta name=\"dtb:uid\" content=\"$identifier\"/>\n";
@@ -365,7 +365,7 @@ my($dirname, $base, $ext);
 if($f) {
 	($base, $dirname, $ext) = fileparse($f, qr/\.[^.]*/);
 	$mt = GetMediaType($ext);
-	print CONTENT "<item id=\"cover-image\" href=\"$base$ext\" media-type=\"$mt\" />\n";
+	print CONTENT "<item id=\"cover-image\" properties=\"cover-image\" href=\"$base$ext\" media-type=\"$mt\" />\n";
 }
 $f = $cover{"licenselogo"};
 if($f) {
@@ -380,8 +380,15 @@ foreach(@files) {
 	($fname, $title, $subtitle) = split(/,/, $_);
 	($base, $dirname, $ext) = fileparse($fname, qr/\.[^.]*/);
 	if($ext eq ".xhtml") {
+		@additionalfiles = GetFiles($fname);
 		print CONTENT "<item id=\"$base\" href=\"$base.xhtml\" media-type=\"application/xhtml+xml\"/>\n";
 		push(@spine, $base);
+		foreach(@additionalfiles) {
+			($b, $d, $e) = fileparse($_, qr/\.[^.]*/);
+			copy($_, "$epubname/OEPBS/");
+			$mt = GetMediaType($e);
+			print CONTENT "<item id=\"$b\" href=\"$b$e\" media-type=\"$mt\" />\n";
+		}
 	}
 	elsif($ext eq ".svg") {
 		copy($fname, "$epubname/OEPBS");
